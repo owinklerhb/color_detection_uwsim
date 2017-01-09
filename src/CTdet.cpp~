@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
 
 
 
- if(ctdetMain->run("/uwsim/camera2")) { 
+ if(ctdetMain->run("/uwsim/camera1")) { 
     nReturnvalue = EXIT_SUCCESS;
   }
   
@@ -68,9 +68,10 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
    if (!m_gpsSignalReceived){
 	return;
   }
+//    std::cerr << "Setze Nullpointer" << std::endl;	
   cv_bridge::CvImagePtr cv_ptr = nullptr;		
 
-
+//    std::cerr << "Erstelle Crabs.csv" << std::endl;	
 	//hier in csv reinschreiben
 	ofstream myfile("crabs.csv", std::ios_base::app); 	
 
@@ -82,48 +83,65 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
     std::cerr << "No color image" << std::endl;		
   }
 
-  if(cv_ptr) {
+  if(cv_ptr) {	
     cv::Mat imgMat = cv_ptr->image; //ROS to OpenCv
 
 // Add CV-related code to process image here.
-
+	
 	cv::Mat filtered_image;
  	cv::Mat3b bgr = filtered_image;
 
    	 cv::Mat3b hsv;
-   	 cvtColor(bgr, hsv, COLOR_BGR2HSV);
+   	 cv::cvtColor(bgr, hsv, COLOR_BGR2HSV);
 
 //RED COLOR
     cv::Mat1b mask1, mask2;
-    inRange(hsv, Scalar(0, 70, 50), Scalar(10, 255, 255), mask1);
-    inRange(hsv, Scalar(170, 70, 50), Scalar(180, 255, 255), mask2);
+    inRange(hsv, Scalar(0, 100, 100), Scalar(10, 255, 255), mask1);
+    inRange(hsv, Scalar(160, 100, 100), Scalar(179, 255, 255), mask2);
 
     Mat1b mask = mask1 | mask2;
-
-    imshow("Mask", mask);
+	    cv::cvtColor(imgMat, cv_ptr->image, CV_HSV2BGR);
+    //imshow("Mask", mask);
     //waitKey();
+    //return 0;
 
-    return 0;
+	 /* Gray scale image */
+           cv::Mat filtered_image2;
+            cv::cvtColor(imgMat,filtered_image2,CV_BGR2GRAY);
+
+	// threshold image 
+	    int global_min_threshold=50; //hier die Untergrenze des Threshold
+	    cv::Mat threshold_image;
+	    cv::threshold(filtered_image2,imgMat,global_min_threshold,255,cv::THRESH_BINARY); //Obergrenze auf 255 für echtes Weiß
+	    //cv::namedWindow("Threshold Image");
+	    //cv::imshow("Threshold Image",threshold_image);
+	    
+	    cv::cvtColor(imgMat, cv_ptr->image, CV_GRAY2BGR);
 
 //OPENCV TO ROS
     ros::NodeHandle n;
-    ros::Publisher imgPub_perc = n.advertise<sensor_msgs::Image>("Image_Perception", 100);
+    ros::Publisher imgPub_perc = n.advertise<sensor_msgs::Image>("Image_Perception", 100);	
     imgPub_perc.publish(*(cv_ptr->toImageMsg()));
-    ros::Rate loop_rate(2);
+    ros::Rate loop_rate(0.3); //2
 
 // White Pixel Counter
-         cv::Mat partROI;
+         cv::Mat partROI;	
             float count_white = 0;
             float count_black = 0;
-            count_white = countNonZero(imgMat);
+	    count_white = countNonZero(imgMat);
+//            count_white = countNonZero(imgMat);
             count_black = imgMat.cols * imgMat.rows - count_white;
 	    float perc =count_white/768;
+	if (perc >= 10)
+{
+	    std::cerr << "Wert über oder gleich 3" << std::endl;	
 	    cout << "Percentage of objects covering surface = " << perc << endl;
 	    cout << "latitude " << m_gpsPosition.latitude << " longitude " << m_gpsPosition.longitude << endl;       
             imshow("Image", imgMat); 
 	myfile << perc << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl;
+}
 // END White Pixel Counter
-
+    std::cerr << perc << std::endl;	
 
     int count = 0;
     while (ros::ok())

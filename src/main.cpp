@@ -14,7 +14,8 @@ int main(int argc, char** argv) {
   
   CTdet::Ptr ctdetMain = CTdet::create();
   
-  if(ctuwsimMain->run("/camera_topic")) {
+ // if(ctuwsimMain->run("/camera_topic")) {
+  if(ctdetMain->run("/camera_topic")) {
     nReturnvalue = EXIT_SUCCESS;
   }
   

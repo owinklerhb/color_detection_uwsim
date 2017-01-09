@@ -17,8 +17,8 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(${PROJECT_NAME}
-    src/CTdet.cpp)
+#add_executable(${PROJECT_NAME}
+#    src/CTdet.cpp)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -35,6 +35,9 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+#target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+#add_dependencies(${PROJECT_NAME} camera_topic_uwsim_generate_messages_cpp)
+
 add_executable(camera_topic_detection src/CTdet.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+target_link_libraries(camera_topic_detection ${catkin_LIBRARIES})
 add_dependencies(${PROJECT_NAME} camera_topic_uwsim_generate_messages_cpp)
