@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="uwsim" type="uwsim" name="camera_topic_detection" respawn="false" output="screen"/>
+  <node pkg="camera_topic_detection" type="camera_topic_detection" name="color_detection" respawn="false" output="screen"/>
+  </node>
+</launch>
