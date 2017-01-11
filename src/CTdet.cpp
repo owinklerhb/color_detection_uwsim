@@ -68,91 +68,97 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
    if (!m_gpsSignalReceived){
 	return;
   }
-//    std::cerr << "Setze Nullpointer" << std::endl;	
-  cv_bridge::CvImagePtr cv_ptr = nullptr;		
 
-//    std::cerr << "Erstelle Crabs.csv" << std::endl;	
-	//hier in csv reinschreiben
-	ofstream myfile("crabs.csv", std::ios_base::app); 	
+  cv_bridge::CvImagePtr cv_ptr_red = nullptr;
+  cv_bridge::CvImagePtr cv_ptr_green = nullptr;	
+  cv_bridge::CvImagePtr cv_ptr_blue = nullptr;	
 
+	ofstream myfile("crabs_test.csv", std::ios_base::app); 	
 
-  //msg wird als sensor_msgs im Format Image deklariert
   if(sensor_msgs::image_encodings::isColor(imgData->encoding)) {
-    cv_ptr = cv_bridge::toCvCopy(imgData, sensor_msgs::image_encodings::BGR8); 	//BGR8, RGB8// BGR16 /// RGBA16 // etc.
+    cv_ptr_red = cv_bridge::toCvCopy(imgData, sensor_msgs::image_encodings::BGR8); 	//BGR8, RGB8// BGR16 /// RGBA16 // etc.
+    cv_ptr_green = cv_bridge::toCvCopy(imgData, sensor_msgs::image_encodings::BGR8); 	//BGR8, RGB8// BGR16 /// RGBA16 // etc.
+    cv_ptr_blue = cv_bridge::toCvCopy(imgData, sensor_msgs::image_encodings::BGR8); 	//BGR8, RGB8// BGR16 /// RGBA16 // etc.
   } else {
     std::cerr << "No color image" << std::endl;		
   }
 
-  if(cv_ptr) {	
-    cv::Mat imgMat = cv_ptr->image; //ROS to OpenCv
+  if(cv_ptr_red) {	
+    cv::Mat imgMat_red = cv_ptr_red->image; 	//ROS Msgs becomes an image for red color that OpenCV is able to handle
+    cv::Mat imgMat_blue = cv_ptr_blue->image; 	//ROS Msgs becomes an image for blue color that OpenCV is able to handle
+    cv::Mat imgMat_green = cv_ptr_green->image; //ROS Msgs becomes an image for green color that OpenCV is able to handle
 
-// Add CV-related code to process image here.
+	// Add CV-related code to process image here.
+	cv::Mat hsv_image_red;		//OpenCV variable that will receive red information
+	cv::Mat hsv_image_green;	//OpenCV variable that will receive green information
+	cv::Mat hsv_image_blue;		//OpenCV variable that will receive blue information
+   	cv::cvtColor(imgMat_red, hsv_image_red, COLOR_BGR2HSV);
+   	cv::cvtColor(imgMat_green, hsv_image_green, COLOR_BGR2HSV);
+   	cv::cvtColor(imgMat_blue, hsv_image_blue, COLOR_BGR2HSV);
+
+
+//##START COLOR DETECTION##
+//THRESHOLD THE HSV IMAGE, KEEP ONLY THE COLORED PIXELS
 	
-	cv::Mat hsv_image;//filtered_image; //hsv_image
- 	//cv::Mat3b bgr = filtered_image;
+	cv::Mat lower_red_hue_range;		//defining lower hue variable of red color
+	cv::Mat upper_red_hue_range;		//defining upper hue variable of red color
+	cv::Mat lower_green_hue_range;		//defining lower hue variable of green color
+	cv::Mat upper_green_hue_range;		//defining upper hue variable of green color
+	cv::Mat lower_blue_hue_range;		//defining lower hue variable of blue color
+	cv::Mat upper_blue_hue_range;		//defining upper hue variable of blue color
 
-   	cv::Mat3b hsv;
-   	 cv::cvtColor(imgMat, hsv_image, COLOR_BGR2HSV);//cv::cvtColor(bgr, hsv, COLOR_BGR2HSV);
-    std::cerr << "BGR2HSV ausgeführt" << std::endl;	
+//--COLOR - RANGE
+	cv::inRange(hsv_image_red, cv::Scalar(0, 100, 100), cv::Scalar(10, 255, 255), lower_red_hue_range);		//Lower hue value of RED 
+	cv::inRange(hsv_image_red, cv::Scalar(0, 50, 10), cv::Scalar(10, 255, 255), upper_red_hue_range);		//Upper hue Value of RED
 
-//RED COLOR
-//THRESHOLD THE HSV IMAGE, KEEP ONLY THE RED PIXELS
-	
-	cv::Mat lower_red_hue_range;
-	//cv::Mat upper_red_hue_range;
-	cv::inRange(hsv_image, cv::Scalar(60, 100, 100), cv::Scalar(100, 255, 255), lower_red_hue_range);
-//imshow("Video capture", lower_red_hue_range);
-	//cv::inRange(hsv_image, cv::Scalar(160, 100, 100), cv::Scalar(179, 255, 255), upper_red_hue_range);
-    std::cerr << "inRange ausgeführt" << std::endl;	
-//----------------------------
-/*    cv::Mat1b mask1, mask2;
-    inRange(hsv, Scalar(237, 100, 100), Scalar(10, 22, 255), mask1); //(0,100,100) (10,255,255)
-    inRange(hsv, Scalar(237, 100, 100), Scalar(10, 22, 255), mask2);//(160,100,100 (179,255,255)
+	cv::inRange(hsv_image_green, cv::Scalar(50, 100, 100), cv::Scalar(60, 255, 255), lower_green_hue_range);	//Lower hue value of GREEN
+	cv::inRange(hsv_image_green, cv::Scalar(45, 50, 10), cv::Scalar(65, 255, 255), upper_green_hue_range);		//Upper hue value of GREEN
 
-    Mat1b mask = mask1 | mask2;*/
-//----------------------------
-	cv::Mat filtered_image2;	    
-	cv::cvtColor(hsv_image, filtered_image2, CV_HSV2BGR);//cv::cvtColor(filtered_image, cv_ptr->image, CV_HSV2BGR); //imgMat
-    std::cerr << "HSV2BGR ausgeführt" << std::endl;	
-   // std::cerr << "erster Wert: "Mat1b << std::endl;
-    //imshow("Mask", mask);
-    //waitKey();
-    //return 0;
+	cv::inRange(hsv_image_blue, cv::Scalar(100, 100, 100), cv::Scalar(120, 255, 255), lower_blue_hue_range);	//Lower hue value of BLUE
+	cv::inRange(hsv_image_blue, cv::Scalar(100, 50, 10), cv::Scalar(120, 255, 255), upper_blue_hue_range);		//Upper hue value of BLUE
 
-	 /* Gray scale image */
-          cv::Mat filtered_image;
-          cv::cvtColor(filtered_image2,filtered_image,CV_BGR2GRAY);//cv::cvtColor(imgMat,filtered_image2,CV_BGR2GRAY);
-    std::cerr << "filtered_image2" << std::endl;	
+//--COLOR - WEIGHT	
+	cv::Mat red_hue_image;
+	cv::Mat green_hue_image;
+	cv::Mat blue_hue_image;	
+	cv::addWeighted(lower_red_hue_range, 1.0, upper_red_hue_range, 1.0, 0.0, red_hue_image);			//Combining received thresholds of RED
+	cv::addWeighted(lower_green_hue_range, 1.0, upper_green_hue_range, 1.0, 0.0, green_hue_image);			//Combining received thresholds of GREEN
+	cv::addWeighted(lower_blue_hue_range, 1.0, upper_blue_hue_range, 1.0, 0.0, blue_hue_image);			//Combining received thresholds of BLUE
 
-	// threshold image 
-	    int global_min_threshold=50; //hier die Untergrenze des Threshold
-	    cv::Mat threshold_image;
-	    cv::threshold(filtered_image,imgMat,global_min_threshold,255,cv::THRESH_BINARY_INV); //Obergrenze auf 255 für echtes Weiß
-	    //cv::namedWindow("Threshold Image");
-	    //cv::imshow("Threshold Image",threshold_image);
-	   
-	    cv::cvtColor(imgMat, cv_ptr->image, CV_GRAY2BGR);
+//##STOP COLOR DETECTION##	
+
+
+	    cv::cvtColor(red_hue_image, cv_ptr_red->image, CV_GRAY2BGR);	//Binary threshold image becomes a color image again
+	    cv::cvtColor(blue_hue_image, cv_ptr_blue->image, CV_GRAY2BGR);	//Binary threshold image becomes a color image again
+	    cv::cvtColor(green_hue_image, cv_ptr_green->image, CV_GRAY2BGR);	//Binary threshold image becomes a color image again
+
 
 //OPENCV TO ROS
-    ros::NodeHandle n;
-    ros::Publisher imgPub_perc = n.advertise<sensor_msgs::Image>("Image_Perception", 100);	
-    imgPub_perc.publish(*(cv_ptr->toImageMsg()));
-    ros::Rate loop_rate(10); //0.3
+    ros::NodeHandle n_red;
+    ros::NodeHandle n_blue;
+    ros::NodeHandle n_green;
+
+    ros::Publisher imgPub_perc_red = n_red.advertise<sensor_msgs::Image>("Image_Perception_red", 100);
+    ros::Publisher imgPub_perc_blue = n_blue.advertise<sensor_msgs::Image>("Image_Perception_blue", 100);	
+    ros::Publisher imgPub_perc_green = n_green.advertise<sensor_msgs::Image>("Image_Perception_green", 100);			
+    imgPub_perc_red.publish(*(cv_ptr_red->toImageMsg()));//RED
+    imgPub_perc_blue.publish(*(cv_ptr_blue->toImageMsg()));//BLUE
+    imgPub_perc_green.publish(*(cv_ptr_green->toImageMsg()));//GREEN
+    ros::Rate loop_rate(0.3); //0.3
 
 // White Pixel Counter
          cv::Mat partROI;	
             float count_white = 0;
             float count_black = 0;
-	    count_white = countNonZero(imgMat);
-//            count_white = countNonZero(imgMat);
-            count_black = imgMat.cols * imgMat.rows - count_white;
+	    count_white = countNonZero(red_hue_image);
+            count_black = red_hue_image.cols * red_hue_image.rows - count_white;
 	    float perc =count_white/768;
-	if (perc >= 10)
+	if (perc >= 0.28)
 {
-	    std::cerr << "Wert über oder gleich 3" << std::endl;	
+	    std::cerr << "Wert über oder gleich 0.2" << std::endl;	
 	    cout << "Percentage of objects covering surface = " << perc << endl;
 	    cout << "latitude " << m_gpsPosition.latitude << " longitude " << m_gpsPosition.longitude << endl;       
-            imshow("Image", imgMat); 
+          //  imshow("Image", imgMat); 
 	myfile << perc << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl;
 }
 // END White Pixel Counter
