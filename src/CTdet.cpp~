@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 
 
 
-		//subscribe to GPS
+		//GPS Subscription
 void CTdet::gpsCallback(const sensor_msgs::NavSatFix::ConstPtr& msg)
 {
   m_gpsPosition = *msg;
@@ -73,7 +73,10 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
   cv_bridge::CvImagePtr cv_ptr_green = nullptr;	
   cv_bridge::CvImagePtr cv_ptr_blue = nullptr;	
 
-	ofstream myfile("crabs_test.csv", std::ios_base::app); 	
+	ofstream myfile_red("crabs_test.csv", std::ios_base::app); 	//For red color
+	ofstream myfile_green("plants_test.csv", std::ios_base::app);	//For green color
+	ofstream myfile_blue("rocks_test.csv", std::ios_base::app); 	//for blue color
+	
 
   if(sensor_msgs::image_encodings::isColor(imgData->encoding)) {
     cv_ptr_red = cv_bridge::toCvCopy(imgData, sensor_msgs::image_encodings::BGR8); 	//BGR8, RGB8// BGR16 /// RGBA16 // etc.
@@ -88,11 +91,10 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
     cv::Mat imgMat_blue = cv_ptr_blue->image; 	//ROS Msgs becomes an image for blue color that OpenCV is able to handle
     cv::Mat imgMat_green = cv_ptr_green->image; //ROS Msgs becomes an image for green color that OpenCV is able to handle
 
-// Add CV-related code to process image here.
-	
-	cv::Mat hsv_image_red;
-	cv::Mat hsv_image_green;
-	cv::Mat hsv_image_blue;
+	// Add CV-related code to process image here.
+	cv::Mat hsv_image_red;		//OpenCV variable that will receive red information
+	cv::Mat hsv_image_green;	//OpenCV variable that will receive green information
+	cv::Mat hsv_image_blue;		//OpenCV variable that will receive blue information
    	cv::cvtColor(imgMat_red, hsv_image_red, COLOR_BGR2HSV);
    	cv::cvtColor(imgMat_green, hsv_image_green, COLOR_BGR2HSV);
    	cv::cvtColor(imgMat_blue, hsv_image_blue, COLOR_BGR2HSV);
@@ -147,23 +149,67 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
     imgPub_perc_green.publish(*(cv_ptr_green->toImageMsg()));//GREEN
     ros::Rate loop_rate(0.3); //0.3
 
-// White Pixel Counter
-         cv::Mat partROI;	
-            float count_white = 0;
+//-----------RED------------------------------------------
+//### White Pixel Counter for RED color ###
+
+         cv::Mat partROI_red;	
+            float count_white = 0;	
             float count_black = 0;
 	    count_white = countNonZero(red_hue_image);
             count_black = red_hue_image.cols * red_hue_image.rows - count_white;
 	    float perc =count_white/768;
 	if (perc >= 0.28)
-{
-	    std::cerr << "Wert über oder gleich 0.2" << std::endl;	
-	    cout << "Percentage of objects covering surface = " << perc << endl;
-	    cout << "latitude " << m_gpsPosition.latitude << " longitude " << m_gpsPosition.longitude << endl;       
-          //  imshow("Image", imgMat); 
-	myfile << perc << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl;
-}
-// END White Pixel Counter
+	{
+	    cout << "Percentage of red objects covering surface = " << perc << endl;
+	    cout << "latitude " << m_gpsPosition.latitude << " longitude " << m_gpsPosition.longitude << endl;
+	    myfile_red << perc << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl; //Writing received values to CSV
+	}
+  //### END White Pixel Counter for RED color ###
+
     std::cerr << perc << std::endl;	
+//-----------/RED------------------------------------------
+
+
+//-----------GREEN------------------------------------------
+//### White Pixel Counter for GREEN color ###
+        
+ cv::Mat partROI_green;	
+            float count_white_green = 0;	
+            float count_black_green = 0;
+	    count_white_green = countNonZero(green_hue_image);
+            count_black_green = green_hue_image.cols * green_hue_image.rows - count_white_green;
+	    float perc_green =count_white_green/768;
+	if (perc_green >= 0.28)
+	{
+	    cout << "Percentage of green objects covering surface = " << perc_green << endl;
+	    cout << "latitude " << m_gpsPosition.latitude << " longitude " << m_gpsPosition.longitude << endl;
+	    myfile_green << perc_green << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl; //Writing received values to CSV
+	}
+  //### END White Pixel Counter for GREEN color ###
+
+    std::cerr << perc_green << std::endl;	
+//-----------/GREEN------------------------------------------
+
+
+//------------BLUE-----------------------------------------
+//### White Pixel Counter for BLUE color ###
+   
+      cv::Mat partROI_blue;	
+            float count_white_blue = 0;	
+            float count_black_blue = 0;
+	    count_white_blue = countNonZero(blue_hue_image);
+            count_black_blue = blue_hue_image.cols * blue_hue_image.rows - count_white_blue;
+	    float perc_blue =count_white_blue/768;
+	if (perc_blue >= 0.28)
+	{
+	    cout << "Percentage of blue objects covering surface = " << perc_blue << endl;
+	    cout << "latitude " << m_gpsPosition.latitude << " longitude " << m_gpsPosition.longitude << endl;
+	    myfile_blue << perc_blue << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl; //Writing received values to CSV
+	}
+  //### END White Pixel Counter for GREEN color ###
+
+    std::cerr << perc_blue << std::endl;	
+//-------------/BLUE----------------------------------------
 
     int count = 0;
     while (ros::ok())
@@ -179,8 +225,13 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
     // Stop CV-related code here
 
      
-      myfile.close(); //hier csv schließen
-
+//      myfile.close(); //hier csv schließen
+myfile_red.close(); //hier csv schließen
+std::cerr << "CLOSING CRABS_TEST.CSV" << std::endl;
+myfile_green.close(); //hier csv schließen
+std::cerr << "CLOSING PLANTS_TEST.CSV" << std::endl;
+myfile_blue.close(); //hier csv schließen
+std::cerr << "CLOSING ROCKS_TEST.CSV" << std::endl;
                
     
   } else {
