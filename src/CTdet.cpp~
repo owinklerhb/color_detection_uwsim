@@ -117,16 +117,19 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 	return;
   }
 
-  cv_bridge::CvImagePtr cv_ptr_red = nullptr;
-  cv_bridge::CvImagePtr cv_ptr_green = nullptr;	
-  cv_bridge::CvImagePtr cv_ptr_blue = nullptr;	
-  cv_bridge::CvImagePtr cv_ptr_yellow = nullptr;
-  cv_bridge::CvImagePtr cv_ptr_purple = nullptr;
-  cv_bridge::CvImagePtr cv_ptr_foto_red = nullptr;
-  cv_bridge::CvImagePtr cv_ptr_foto_green = nullptr;
-  cv_bridge::CvImagePtr cv_ptr_foto_blue = nullptr;
-  cv_bridge::CvImagePtr cv_ptr_foto_yellow = nullptr;
-  cv_bridge::CvImagePtr cv_ptr_foto_purple = nullptr;					
+  cv_bridge::CvImagePtr cv_ptr_red = nullptr;		//Nullpointer for red color
+  cv_bridge::CvImagePtr cv_ptr_green = nullptr;		//Nullpointer for green color
+  cv_bridge::CvImagePtr cv_ptr_blue = nullptr;		//Nullpointer for blue color
+  cv_bridge::CvImagePtr cv_ptr_yellow = nullptr;	//Nullpointer for yellow color
+  cv_bridge::CvImagePtr cv_ptr_purple = nullptr;	//Nullpointer for purple color
+
+  cv_bridge::CvImagePtr cv_ptr_foto_red = nullptr;	//Nullpointer for red color (for image saving)
+  cv_bridge::CvImagePtr cv_ptr_foto_green = nullptr;	//Nullpointer for green color (for image saving)
+  cv_bridge::CvImagePtr cv_ptr_foto_blue = nullptr;	//Nullpointer for blue color (for image saving)
+  cv_bridge::CvImagePtr cv_ptr_foto_yellow = nullptr;	//Nullpointer for yellow color (for image saving)
+  cv_bridge::CvImagePtr cv_ptr_foto_purple = nullptr;	//Nullpointer for purple color (for image saving)	
+
+  cv_bridge::CvImagePtr cv_ptr_shape_circle = nullptr;	//Nullpointer for circular shape (for shape detection)			
 
 	ofstream myfile_red("red_crabs_scene_11.csv", std::ios_base::app); 		//For red color
 	ofstream myfile_green("green_plants_scene_11.csv", std::ios_base::app);		//For green color
@@ -148,53 +151,67 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
     cv_ptr_foto_yellow = cv_bridge::toCvCopy(imgData, sensor_msgs::image_encodings::BGR8); 	//BGR8, RGB8// BGR16 /// RGBA16 // etc.
     cv_ptr_foto_purple = cv_bridge::toCvCopy(imgData, sensor_msgs::image_encodings::BGR8); 	//BGR8, RGB8// BGR16 /// RGBA16 // etc.
 
+    cv_ptr_shape_circle = cv_bridge::toCvCopy(imgData, sensor_msgs::image_encodings::BGR8); 	//BGR8, RGB8// BGR16 /// RGBA16 // etc.
+
   } else {
-    std::cerr << "No color image" << std::endl;		
+    std::cerr << "No color image" << std::endl;	//ERRORCODE for missing color in image	
   }
 
   if(cv_ptr_red) {	
-    cv::Mat imgMat_red = cv_ptr_red->image; 	//ROS Msgs becomes an image for red color that OpenCV is able to handle
-    cv::Mat imgMat_blue = cv_ptr_blue->image; 	//ROS Msgs becomes an image for blue color that OpenCV is able to handle
-    cv::Mat imgMat_green = cv_ptr_green->image; //ROS Msgs becomes an image for green color that OpenCV is able to handle
-    cv::Mat imgMat_yellow = cv_ptr_yellow->image; //ROS Msgs becomes an image for yellow color that OpenCV is able to handle
-    cv::Mat imgMat_purple = cv_ptr_purple->image; //ROS Msgs becomes an image for purple color that OpenCV is able to handle
+    	cv::Mat imgMat_red = cv_ptr_red->image; 	//ROS Msgs becomes an image for red color that OpenCV is able to handle
+    	cv::Mat imgMat_blue = cv_ptr_blue->image; 	//ROS Msgs becomes an image for blue color that OpenCV is able to handle
+    	cv::Mat imgMat_green = cv_ptr_green->image; 	//ROS Msgs becomes an image for green color that OpenCV is able to handle
+   	cv::Mat imgMat_yellow = cv_ptr_yellow->image; 	//ROS Msgs becomes an image for yellow color that OpenCV is able to handle
+    	cv::Mat imgMat_purple = cv_ptr_purple->image; 	//ROS Msgs becomes an image for purple color that OpenCV is able to handle
 
-	cv::Mat red_foto = cv_ptr_foto_red->image;
-	cv::Mat green_foto = cv_ptr_foto_green->image;
-	cv::Mat blue_foto = cv_ptr_foto_blue->image;
-	cv::Mat yellow_foto = cv_ptr_foto_yellow->image;
-	cv::Mat purple_foto = cv_ptr_foto_purple->image;
+    	cv::Mat imgMat_shape_circle = cv_ptr_shape_circle->image; 	//ROS Msgs becomes an image for shape detection that OpenCV is able to handle
 
-	// Add CV-related code to process image here.
+	cv::Mat red_foto = cv_ptr_foto_red->image;	//CV Variable receives image information from the pointer
+	cv::Mat green_foto = cv_ptr_foto_green->image;	//CV Variable receives image information from the pointer
+	cv::Mat blue_foto = cv_ptr_foto_blue->image;	//CV Variable receives image information from the pointer
+	cv::Mat yellow_foto = cv_ptr_foto_yellow->image;//CV Variable receives image information from the pointer
+	cv::Mat purple_foto = cv_ptr_foto_purple->image;//CV Variable receives image information from the pointer
+
 	cv::Mat hsv_image_red;		//OpenCV variable that will receive red information
 	cv::Mat hsv_image_green;	//OpenCV variable that will receive green information
 	cv::Mat hsv_image_blue;		//OpenCV variable that will receive blue information
 	cv::Mat hsv_image_yellow;	//OpenCV variable that will receive yellow information
 	cv::Mat hsv_image_purple;	//OpenCV variable that will receive purple information
-   	cv::cvtColor(imgMat_red, hsv_image_red, COLOR_BGR2HSV);
-   	cv::cvtColor(imgMat_green, hsv_image_green, COLOR_BGR2HSV);
-   	cv::cvtColor(imgMat_blue, hsv_image_blue, COLOR_BGR2HSV);
-   	cv::cvtColor(imgMat_yellow, hsv_image_yellow, COLOR_BGR2HSV);
-   	cv::cvtColor(imgMat_purple, hsv_image_purple, COLOR_BGR2HSV);
+
+	cv::Mat hsv_image_shape_circle;	//OpenCV variable that will receive information for circle detection
+
+   	cv::cvtColor(imgMat_red, hsv_image_red, COLOR_BGR2HSV);		//Changing the color code from BGR to HSV
+   	cv::cvtColor(imgMat_green, hsv_image_green, COLOR_BGR2HSV);	//Changing the color code from BGR to HSV
+   	cv::cvtColor(imgMat_blue, hsv_image_blue, COLOR_BGR2HSV);	//Changing the color code from BGR to HSV
+   	cv::cvtColor(imgMat_yellow, hsv_image_yellow, COLOR_BGR2HSV);	//Changing the color code from BGR to HSV
+   	cv::cvtColor(imgMat_purple, hsv_image_purple, COLOR_BGR2HSV);	//Changing the color code from BGR to HSV
+
+   	cv::cvtColor(imgMat_shape_circle, hsv_image_shape_circle, COLOR_BGR2HSV);	//Changing the color code from BGR to HSV
 
 	
 
 
-//##START COLOR DETECTION##
-//THRESHOLD THE HSV IMAGE, KEEP ONLY THE COLORED PIXELS
+//BEGIN COLOR DETECTION
+//(THRESHOLD THE HSV IMAGE, KEEP ONLY THE COLORED PIXELS)
 	
 	cv::Mat lower_red_hue_range;		//defining lower hue variable of red color
 	cv::Mat upper_red_hue_range;		//defining upper hue variable of red color
+
 	cv::Mat lower_green_hue_range;		//defining lower hue variable of green color
 	cv::Mat upper_green_hue_range;		//defining upper hue variable of green color
+
 	cv::Mat lower_blue_hue_range;		//defining lower hue variable of blue color
 	cv::Mat upper_blue_hue_range;		//defining upper hue variable of blue color
+
 	cv::Mat lower_yellow_hue_range;		//defining lower hue variable of yellow color
 	cv::Mat upper_yellow_hue_range;		//defining upper hue variable of yellow color
+
 	cv::Mat lower_purple_hue_range;		//defining lower hue variable of purple color
 	cv::Mat upper_purple_hue_range;		//defining upper hue variable of purple color
 
-//--COLOR - RANGE
+
+//COLOR - RANGE
+
 	cv::inRange(hsv_image_red, cv::Scalar(0, 50, 50), cv::Scalar(10, 255, 255), lower_red_hue_range);		//Lower hue value of RED 
 	cv::inRange(hsv_image_red, cv::Scalar(0, 50, 35), cv::Scalar(10, 255, 255), upper_red_hue_range);		//Upper hue Value of RED
 
@@ -210,20 +227,22 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 	cv::inRange(hsv_image_purple, cv::Scalar(135, 50, 50), cv::Scalar(165, 255, 255), lower_purple_hue_range);	//Lower hue value of YELLOW
 	cv::inRange(hsv_image_purple, cv::Scalar(135, 50, 50), cv::Scalar(165, 255, 255), upper_purple_hue_range);	//Upper hue value of YELLOW
 
-//--COLOR - WEIGHT	
-	cv::Mat red_hue_image;
-	cv::Mat green_hue_image;
-	cv::Mat blue_hue_image;	
-	cv::Mat yellow_hue_image;
-	cv::Mat purple_hue_image;
 
-	cv::addWeighted(lower_red_hue_range, 1.0, upper_red_hue_range, 1.0, 0.0, red_hue_image);			//Combining received thresholds of RED
-	cv::addWeighted(lower_green_hue_range, 1.0, upper_green_hue_range, 1.0, 0.0, green_hue_image);			//Combining received thresholds of GREEN
-	cv::addWeighted(lower_blue_hue_range, 1.0, upper_blue_hue_range, 1.0, 0.0, blue_hue_image);			//Combining received thresholds of BLUE
-	cv::addWeighted(lower_yellow_hue_range, 1.0, upper_yellow_hue_range, 1.0, 0.0, yellow_hue_image);		//Combining received thresholds of YELLOW
-	cv::addWeighted(lower_purple_hue_range, 1.0, upper_purple_hue_range, 1.0, 0.0, purple_hue_image);		//Combining received thresholds of PURPLE
+//COLOR - WEIGHT
+	
+	cv::Mat red_hue_image;		//resulting variable with combination of thresholt images
+	cv::Mat green_hue_image;	//resulting variable with combination of thresholt images
+	cv::Mat blue_hue_image;		//resulting variable with combination of thresholt images
+	cv::Mat yellow_hue_image;	//resulting variable with combination of thresholt images
+	cv::Mat purple_hue_image;	//resulting variable with combination of thresholt images
 
-//##STOP COLOR DETECTION##	
+	cv::addWeighted(lower_red_hue_range, 1.0, upper_red_hue_range, 1.0, 0.0, red_hue_image);	    //Combining received thresholds of RED
+	cv::addWeighted(lower_green_hue_range, 1.0, upper_green_hue_range, 1.0, 0.0, green_hue_image);	    //Combining received thresholds of GREEN
+	cv::addWeighted(lower_blue_hue_range, 1.0, upper_blue_hue_range, 1.0, 0.0, blue_hue_image);	    //Combining received thresholds of BLUE
+	cv::addWeighted(lower_yellow_hue_range, 1.0, upper_yellow_hue_range, 1.0, 0.0, yellow_hue_image);   //Combining received thresholds of YELLOW
+	cv::addWeighted(lower_purple_hue_range, 1.0, upper_purple_hue_range, 1.0, 0.0, purple_hue_image);   //Combining received thresholds of PURPLE
+
+//END OF COLOR DETECTION	
 
 
 	    cv::cvtColor(red_hue_image, cv_ptr_red->image, CV_GRAY2BGR);	//Binary threshold image becomes a color image again
@@ -233,30 +252,40 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 	    cv::cvtColor(purple_hue_image, cv_ptr_purple->image, CV_GRAY2BGR);	//Binary threshold image becomes a color image again
 
 
-//OPENCV TO ROS
+/*//BEGIN OF CIRCULAR SHAPE DETECTION
+
+	CvSeq* contours;  				//hold the pointer to a contour in the memory block
+    	CvSeq* result;   				//hold sequence of points of a contour
+    	CvMemStorage *storage = cvCreateMemStorage(0); 	//storage area for all contours
+
+    	cvFindContours(red_hue_image, storage, &contours, sizeof(CvContour), CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
+*/
+
+
+//TRANSFORMING ROS MSGS TO OPENCV FORMAT
     ros::NodeHandle n_red;
     ros::NodeHandle n_blue;
     ros::NodeHandle n_green;
     ros::NodeHandle n_yellow;
     ros::NodeHandle n_purple;
 
-    ros::Publisher imgPub_perc_red = n_red.advertise<sensor_msgs::Image>("Image_Perception_red", 100);
-    ros::Publisher imgPub_perc_blue = n_blue.advertise<sensor_msgs::Image>("Image_Perception_blue", 100);	
-    ros::Publisher imgPub_perc_green = n_green.advertise<sensor_msgs::Image>("Image_Perception_green", 100);
-    ros::Publisher imgPub_perc_yellow = n_yellow.advertise<sensor_msgs::Image>("Image_Perception_yellow", 100);	
-    ros::Publisher imgPub_perc_purple = n_purple.advertise<sensor_msgs::Image>("Image_Perception_purple", 100);					
-    imgPub_perc_red.publish(*(cv_ptr_red->toImageMsg()));//RED
-    imgPub_perc_blue.publish(*(cv_ptr_blue->toImageMsg()));//BLUE
-    imgPub_perc_green.publish(*(cv_ptr_green->toImageMsg()));//GREEN
-    imgPub_perc_yellow.publish(*(cv_ptr_yellow->toImageMsg()));//YELLOW
-    imgPub_perc_purple.publish(*(cv_ptr_purple->toImageMsg()));//PURPLE
+    ros::Publisher imgPub_perc_red = n_red.advertise<sensor_msgs::Image>("Image_Perception_red", 100);		//Publisher RED
+    ros::Publisher imgPub_perc_blue = n_blue.advertise<sensor_msgs::Image>("Image_Perception_blue", 100);	//Publisher BLUE
+    ros::Publisher imgPub_perc_green = n_green.advertise<sensor_msgs::Image>("Image_Perception_green", 100);	//Publisher GREEN
+    ros::Publisher imgPub_perc_yellow = n_yellow.advertise<sensor_msgs::Image>("Image_Perception_yellow", 100);	//Publisher YELLOW
+    ros::Publisher imgPub_perc_purple = n_purple.advertise<sensor_msgs::Image>("Image_Perception_purple", 100);	//Publisher PURPLE	
+			
+    imgPub_perc_red.publish(*(cv_ptr_red->toImageMsg()));	//POINTING TO RED
+    imgPub_perc_blue.publish(*(cv_ptr_blue->toImageMsg()));	//POINTING TO BLUE
+    imgPub_perc_green.publish(*(cv_ptr_green->toImageMsg()));	//POINTING TO GREEN
+    imgPub_perc_yellow.publish(*(cv_ptr_yellow->toImageMsg()));	//POINTING TO YELLOW
+    imgPub_perc_purple.publish(*(cv_ptr_purple->toImageMsg()));	//POINTING TO PURPLE
 
-    ros::Rate loop_rate(0.3); //0.3
+    ros::Rate loop_rate(0.3); //TIME INTERVAL OF IMAGE CAPTURING
 
-//-----------RED------------------------------------------
-//### White Pixel Counter for RED color ###
 
-         cv::Mat partROI_red;	
+	//PIXELCOUNTER RED
+        cv::Mat partROI_red;	
             float count_white = 0;	
             float count_black = 0;
 	    count_white = countNonZero(red_hue_image);
@@ -264,11 +293,8 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 	    float perc =count_white/768;
 	if (perc >= 0.28)
 	{
-	//image Acquireing
-	set_imageflags_true();
-	//image Acquireing
 	    cout << "I SEE CRABS" << endl;
-
+		//STORING COLOR IMAGE BASED ON RED COLOR DETECTION
 		std::string filename_red;
 		time_t rawtime;
 		struct tm * timeinfo;
@@ -280,20 +306,13 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 		filename_red = "CRABS_" + str + ".png";
 
 	    imwrite( filename_red, red_foto );
-	    //cout << "Percentage of red objects covering surface = " << perc << endl;
-	    //cout << "latitude " << m_gpsPosition.latitude << " longitude " << m_gpsPosition.longitude << endl;
 	    myfile_red << perc << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl; //Writing received values to CSV
 	}
-  //### END White Pixel Counter for RED color ###
-
-    //std::cerr << perc << std::endl;	
-//-----------/RED------------------------------------------
+	//END OF RED PIXELCOUNTER
 
 
-//-----------GREEN------------------------------------------
-//### White Pixel Counter for GREEN color ###
-        
- cv::Mat partROI_green;	
+	//PIXELCOUNTER GREEN
+ 	cv::Mat partROI_green;	
             float count_white_green = 0;	
             float count_black_green = 0;
 	    count_white_green = countNonZero(green_hue_image);
@@ -302,7 +321,7 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 	if (perc_green >= 0.28)
 	{
 	    cout << "I SEE PLANTS" << endl;
-//-----Fotosession-----
+		//STORING COLOR IMAGE BASED ON GREEN COLOR DETECTION
 		std::string filename_green;
 		time_t rawtime;
 		struct tm * timeinfo;
@@ -314,19 +333,13 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 		filename_green = "PLANTS_" + str + ".png";
 
 	    imwrite( filename_green, green_foto );
-//------END Fotosession----
 	    myfile_green << perc_green << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl; //Writing received values to CSV
 	}
-  //### END White Pixel Counter for GREEN color ###
-
-    //std::cerr << perc_green << std::endl;	
-//-----------/GREEN------------------------------------------
+	//END OF GREEN PIXELCOUNTER
 
 
-//------------BLUE-----------------------------------------
-//### White Pixel Counter for BLUE color ###
-   
-      cv::Mat partROI_blue;	
+	//PIXELCOUNTER BLUE
+      	cv::Mat partROI_blue;	
             float count_white_blue = 0;	
             float count_black_blue = 0;
 	    count_white_blue = countNonZero(blue_hue_image);
@@ -335,8 +348,7 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 	if (perc_blue >= 0.28)
 	{
 	    cout << "I SEE BLUE ROCKS" << endl;
-
-//-----Fotosession-----
+		//STORING COLOR IMAGE BASED ON BLUE COLOR DETECTION
 		std::string filename_blue;
 		time_t rawtime;
 		struct tm * timeinfo;
@@ -348,21 +360,12 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 		filename_blue = "BLUE_ROCKS_" + str + ".png";
 
 	    imwrite( filename_blue, blue_foto );
-//------END Fotosession----
-
-	    //cout << "Percentage of blue objects covering surface = " << perc_blue << endl;
-	    //cout << "latitude " << m_gpsPosition.latitude << " longitude " << m_gpsPosition.longitude << endl;
 	    myfile_blue << perc_blue << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl; //Writing received values to CSV
 	}
-  //### END White Pixel Counter for GREEN color ###
+	//END OF BLUE PIXELCOUNTER
 
-    //std::cerr << perc_blue << std::endl;	
-//-------------/BLUE----------------------------------------
-
-//------------YELLOW-----------------------------------------
-//### White Pixel Counter for YELLOW color ###
-   
-      cv::Mat partROI_yellow;	
+	//PIXELCOUNTER YELLOW
+      	cv::Mat partROI_yellow;	
             float count_white_yellow = 0;	
             float count_black_yellow = 0;
 	    count_white_yellow = countNonZero(yellow_hue_image);
@@ -371,8 +374,7 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 	if (perc_yellow >= 0.28)
 	{
 	    cout << "I SEE YELLOW ROCKS" << endl;
-
-//-----Fotosession-----
+		//STORING COLOR IMAGE BASED ON YELLOW COLOR DETECTION
 		std::string filename_yellow;
 		time_t rawtime;
 		struct tm * timeinfo;
@@ -384,19 +386,13 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 		filename_yellow = "YELLOW_ROCKS_" + str + ".png";
 
 	    imwrite( filename_yellow, yellow_foto );
-//------END Fotosession----
 
-	    //cout << "Percentage of blue objects covering surface = " << perc_blue << endl;
-	    //cout << "latitude " << m_gpsPosition.latitude << " longitude " << m_gpsPosition.longitude << endl;
 	    myfile_yellow << perc_yellow << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl; //Writing received values to CSV
 	}
-  //### END White Pixel Counter for YELLOW color ###
-//-------------/YELLOW----------------------------------------
+	//END OF YELLOW PIXELCOUNTER
 
-//------------PURPLE-----------------------------------------
-//### White Pixel Counter for PURPLE color ###
-   
-      cv::Mat partROI_purple;	
+	//PIXELCOUNTER PURPLE
+      	cv::Mat partROI_purple;	
             float count_white_purple = 0;	
             float count_black_purple = 0;
 	    count_white_purple = countNonZero(purple_hue_image);
@@ -405,8 +401,7 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 	if (perc_purple >= 0.28)
 	{
 	    cout << "I SEE PURPLE STARFISH" << endl;
-
-//-----Fotosession-----
+		//STORING COLOR IMAGE BASED ON PURPLE COLOR DETECTION
 		std::string filename_purple;
 		time_t rawtime;
 		struct tm * timeinfo;
@@ -418,14 +413,9 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 		filename_purple = "STARFISH_" + str + ".png";
 
 	    imwrite( filename_purple, purple_foto );
-//------END Fotosession----
-
-	    //cout << "Percentage of blue objects covering surface = " << perc_blue << endl;
-	    //cout << "latitude " << m_gpsPosition.latitude << " longitude " << m_gpsPosition.longitude << endl;
 	    myfile_purple << perc_purple << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl; //Writing received values to CSV
 	}
-  //### END White Pixel Counter for PURPLE color ###
-//-------------/PURPLE----------------------------------------
+	//END OF PURPLE PIXELCOUNTER
 
     int count = 0;
     while (ros::ok())
@@ -440,11 +430,11 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
     
     // Stop CV-related code here
 
-myfile_red.close();
-myfile_green.close();
-myfile_blue.close();
-myfile_yellow.close();
-myfile_purple.close();
+myfile_red.close();	//CLOSING THE CSV FILE
+myfile_green.close();	//CLOSING THE CSV FILE
+myfile_blue.close();	//CLOSING THE CSV FILE
+myfile_yellow.close();	//CLOSING THE CSV FILE
+myfile_purple.close();	//CLOSING THE CSV FILE
 
     
   } else {
