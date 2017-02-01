@@ -131,11 +131,12 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 
   cv_bridge::CvImagePtr cv_ptr_shape_circle = nullptr;	//Nullpointer for circular shape (for shape detection)			
 
-	ofstream myfile_red("red_crabs_scene_11.csv", std::ios_base::app); 		//For red color
-	ofstream myfile_green("green_plants_scene_11.csv", std::ios_base::app);		//For green color
-	ofstream myfile_blue("blue_rocks_scene_11.csv", std::ios_base::app);		//for blue color
-	ofstream myfile_yellow("yellow_rocks_scene_11.csv", std::ios_base::app);	//for yellow color
-	ofstream myfile_purple("purple_starfish_scene_11.csv", std::ios_base::app);	//for purple color
+	ofstream myfile_red("red_crabs.csv", std::ios_base::app); 		//For red color
+	ofstream myfile_green("green_plants.csv", std::ios_base::app);		//For green color
+	ofstream myfile_blue("blue_rocks.csv", std::ios_base::app);		//for blue color
+	ofstream myfile_yellow("yellow_rocks.csv", std::ios_base::app);		//for yellow color
+	ofstream myfile_purple("purple_starfish.csv", std::ios_base::app);	//for purple color
+	ofstream myfile_others("others.csv", std::ios_base::app);		//for non environment related objects
 	
 
   if(sensor_msgs::image_encodings::isColor(imgData->encoding)) {
@@ -263,17 +264,31 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 
 
 //TRANSFORMING ROS MSGS TO OPENCV FORMAT
-    ros::NodeHandle n_red;
-    ros::NodeHandle n_blue;
-    ros::NodeHandle n_green;
-    ros::NodeHandle n_yellow;
-    ros::NodeHandle n_purple;
+    ros::NodeHandle n_red;		//NodeHandle for Image storage
+    ros::NodeHandle n_blue;		//NodeHandle for Image storage
+    ros::NodeHandle n_green;		//NodeHandle for Image storage
+    ros::NodeHandle n_yellow;		//NodeHandle for Image storage
+    ros::NodeHandle n_purple;		//NodeHandle for Image storage
 
-    ros::Publisher imgPub_perc_red = n_red.advertise<sensor_msgs::Image>("Image_Perception_red", 100);		//Publisher RED
-    ros::Publisher imgPub_perc_blue = n_blue.advertise<sensor_msgs::Image>("Image_Perception_blue", 100);	//Publisher BLUE
-    ros::Publisher imgPub_perc_green = n_green.advertise<sensor_msgs::Image>("Image_Perception_green", 100);	//Publisher GREEN
-    ros::Publisher imgPub_perc_yellow = n_yellow.advertise<sensor_msgs::Image>("Image_Perception_yellow", 100);	//Publisher YELLOW
-    ros::Publisher imgPub_perc_purple = n_purple.advertise<sensor_msgs::Image>("Image_Perception_purple", 100);	//Publisher PURPLE	
+    ros::NodeHandle n_red_string;	//NodeHandle for Logging
+    ros::NodeHandle n_green_string;	//NodeHandle for Logging
+    ros::NodeHandle n_yellow_string;	//NodeHandle for Logging
+    ros::NodeHandle n_purple_string;	//NodeHandle for Logging
+    ros::NodeHandle n_blue_string;	//NodeHandle for Logging
+
+    ros::Publisher imgPub_perc_red = n_red.advertise<sensor_msgs::Image>("Image_Perception_red", 100);		//advertise RED
+    ros::Publisher imgPub_perc_blue = n_blue.advertise<sensor_msgs::Image>("Image_Perception_blue", 100);	//advertise BLUE
+    ros::Publisher imgPub_perc_green = n_green.advertise<sensor_msgs::Image>("Image_Perception_green", 100);	//advertise GREEN
+    ros::Publisher imgPub_perc_yellow = n_yellow.advertise<sensor_msgs::Image>("Image_Perception_yellow", 100);	//advertise YELLOW
+    ros::Publisher imgPub_perc_purple = n_purple.advertise<sensor_msgs::Image>("Image_Perception_purple", 100);	//advertise PURPLE
+
+
+    ros::Publisher imgPub_perc_red_string = n_red.advertise<sensor_msgs::Image>("Image_Perception_red_string", 100);		//advertise RED string
+    ros::Publisher imgPub_perc_blue_string = n_blue.advertise<sensor_msgs::Image>("Image_Perception_blue_string", 100);		//advertise BLUE string
+    ros::Publisher imgPub_perc_green_string = n_green.advertise<sensor_msgs::Image>("Image_Perception_green_string", 100);	//advertise GREEN string
+    ros::Publisher imgPub_perc_yellow_string = n_yellow.advertise<sensor_msgs::Image>("Image_Perception_yellow_string", 100);	//advertise YELLOW string
+    ros::Publisher imgPub_perc_purple_string = n_purple.advertise<sensor_msgs::Image>("Image_Perception_purple_string", 100);	//advertise PURPLE string
+
 			
     imgPub_perc_red.publish(*(cv_ptr_red->toImageMsg()));	//POINTING TO RED
     imgPub_perc_blue.publish(*(cv_ptr_blue->toImageMsg()));	//POINTING TO BLUE
@@ -293,7 +308,7 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 	    float perc =count_white/768;
 	if (perc >= 0.28)
 	{
-	    cout << "I SEE CRABS" << endl;
+	    cout << "I SEE RED CRABS" << endl;
 		//STORING COLOR IMAGE BASED ON RED COLOR DETECTION
 		std::string filename_red;
 		time_t rawtime;
@@ -307,6 +322,7 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 
 	    imwrite( filename_red, red_foto );
 	    myfile_red << perc << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl; //Writing received values to CSV
+            imgPub_perc_red_string.publish(*(cv_ptr_red->toImageMsg()));	//POINTING TO RED      	    
 	}
 	//END OF RED PIXELCOUNTER
 
@@ -320,7 +336,7 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 	    float perc_green =count_white_green/768;
 	if (perc_green >= 0.28)
 	{
-	    cout << "I SEE PLANTS" << endl;
+	    cout << "I SEE GREEN PLANTS" << endl;
 		//STORING COLOR IMAGE BASED ON GREEN COLOR DETECTION
 		std::string filename_green;
 		time_t rawtime;
@@ -334,6 +350,7 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 
 	    imwrite( filename_green, green_foto );
 	    myfile_green << perc_green << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl; //Writing received values to CSV
+            imgPub_perc_green_string.publish(*(cv_ptr_green->toImageMsg()));	//POINTING TO GREEN
 	}
 	//END OF GREEN PIXELCOUNTER
 
@@ -361,6 +378,7 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 
 	    imwrite( filename_blue, blue_foto );
 	    myfile_blue << perc_blue << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl; //Writing received values to CSV
+    	    imgPub_perc_blue_string.publish(*(cv_ptr_blue->toImageMsg()));	//POINTING PUBLISHER TO BLUE
 	}
 	//END OF BLUE PIXELCOUNTER
 
@@ -388,6 +406,7 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 	    imwrite( filename_yellow, yellow_foto );
 
 	    myfile_yellow << perc_yellow << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl; //Writing received values to CSV
+	    imgPub_perc_yellow_string.publish(*(cv_ptr_yellow->toImageMsg()));	//POINTING TO YELLOW
 	}
 	//END OF YELLOW PIXELCOUNTER
 
@@ -414,6 +433,7 @@ void CTdet::imageCallback(const sensor_msgs::ImagePtr& imgData) {
 
 	    imwrite( filename_purple, purple_foto );
 	    myfile_purple << perc_purple << ", " << "latitude, " << m_gpsPosition.latitude * 3.5 << ", longitude, " << m_gpsPosition.longitude * 3.2 << endl; //Writing received values to CSV
+            imgPub_perc_purple_string.publish(*(cv_ptr_purple->toImageMsg()));	//POINTING TO PURPLE
 	}
 	//END OF PURPLE PIXELCOUNTER
 
@@ -435,6 +455,8 @@ myfile_green.close();	//CLOSING THE CSV FILE
 myfile_blue.close();	//CLOSING THE CSV FILE
 myfile_yellow.close();	//CLOSING THE CSV FILE
 myfile_purple.close();	//CLOSING THE CSV FILE
+myfile_others.close();	//CLOSING THE CSV FILE
+
 
     
   } else {
